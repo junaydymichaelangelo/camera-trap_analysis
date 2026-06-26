@@ -1,0 +1,704 @@
+---
+title: "CAMERA TRAP"
+author: "JUNAYDY MICHAEL ANGELO GINTING"
+date: "2025-07-11"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+## Memulai analysis
+Dalam analisis data camera trap,pertama-tama, membersihkan global environment
+
+```{r}
+rm(list = ls())
+```
+
+## Install packages
+Packages yang digunakan, yaitu tidyverse
+
+```{r }
+library(tidyverse)
+```
+
+## Install packages
+Bisa diset bahasa untuk output
+
+```{r }
+Sys.setlocale("LC_TIME", "English")
+
+```
+## Calling Data
+Memulai analysis dengan memanggil data, lalu memilih nama objek
+Nama objek dipilih "df" saja, untuk mempermudah dan singkat
+```{r}
+DF <- list.files("E:/CAMERA TRAP/02_METADATA", full.names = TRUE)
+
+```
+
+## Pemilihan data yang dianalisis
+```{r}
+DF
+```
+## Pemilihan data yang dianalisis
+```{r}
+df <- read.csv(DF[3], sep=";")
+```
+## Cek data, dengan 3 cara
+```{r}
+#cara pertama
+head (df)
+# cara kedua
+view(df)
+# cara ketiga, klik saja nama object di global environment
+```
+## Untuk mengecek baris dan kolom
+```{r}
+nrow(df) #puts out the number of rows
+ncol(df) #puts out the number of columns
+#atau kalau lebih mudah, running ini
+dim(df)
+```
+## Untuk mengakses variable (kolom) nama data 
+```{r}
+df$Count
+#melihat rata-rata
+mean(df$Count, na.rm = TRUE)
+#melihat fungsi data histogram dari
+```
+## Untuk melihat spesies table
+```{r}
+Species_table <- table(df$Species)
+Species_table
+```
+
+```{r}
+unwanted <- (df$Species.Common.Name == "" | df$Species.Common.Name == "human" | df$Species.Common.Name == "empty" | df$Species.Common.Name == "Blank")
+
+#check again
+unwanted
+
+```
+## Untuk merapikan data yang sudah difilter
+```{r}
+unwanted_tidy <- (df$Species.Common.Name %in% c("","human","empty", "Blank", NA))
+
+```
+
+
+
+```{r}
+table(unwanted_tidy)
+```
+
+```{r}
+wanted <- !unwanted_tidy
+
+df_filtered <- filter(df,wanted)
+head(df_filtered)
+
+```
+
+```{r}
+Species_table_df_filtered <- as.data.frame(table(df_filtered$Species.Common.Name))
+Species_table_df_filtered
+```
+
+
+```{r}
+names(Species_table_df_filtered) <- c("Species", "Picture_Count")
+
+Species <- arrange(Species_table_df_filtered, desc(Picture_Count))
+
+Species
+```
+
+
+## GGPLOT 1
+```{r}
+#ggplot(data = df_filtered, aes(x = fct_rev(fct_infreq(Genus.Species))))+
+  #geom_bar(fill=)+
+  #coord_flip()+
+  #xlab("Species")+
+  #ylab("Jumlah foto")+
+  #labs(fill="Number of Individuals in a Picture:", title = "Jumlah foto per Species", subtitle = "Stasiun Penelitian Sikundur, 28/11/2023 - 27/1/2024")+
+  #scale_y_continuous(expand = expansion(mult = c(0.01, 0.1)))+
+  #geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex=2.5,
+          #position = position_dodge(width = 1.0), hjust = -0.25)+
+  #theme(axis.text.y = element_text(size = 7), legend.position="bottom")+
+  #guides(fill = guide_legend(nrow = 1, title.position = "top"))
+  
+
+ggplot(data = df_filtered, aes(x = fct_rev(fct_infreq(Species.Common.Name)))) +
+  geom_bar(fill = "#09712a") +  # Specify a color here
+  coord_flip() +
+  xlab("Jenis Satwa") +
+  ylab("Jumlah Foto") +
+  labs(fill = "Number of Individuals in a Picture:",
+       title = "Jumlah foto setiap jenis",
+       subtitle = "Stasiun Penelitian Suaq Balimbing, Januari - Februari 2026") +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.1))) +
+  geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex = 2.5,
+            position = position_dodge(width = 1.0), hjust = -0.25) +
+  theme(axis.text.y = element_text(size = 7), legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1, title.position = "top"))
+
+
+```
+
+
+```{r}
+# Function to generate random color codes
+generate_random_colors <- function(num_colors) {
+  colors <- replicate(num_colors, {
+    paste0("#", paste0(sample(c(0:9, letters[1:6]), 6, replace = TRUE), collapse = ""))
+  })
+  return(colors)
+}
+
+# Generate a list of 10 random color codes
+random_colors <- generate_random_colors(10)
+
+# Print the list of random color codes
+print(random_colors)
+
+ "#3eb4ab" "#09712a" "#b2364f" "#f2dc3a" "#66d560" "#231cc6" "#d3618e" "#90ac42" "#837e5e" "#e10b12" "#4ae74a" "#9e7c45" "#33e4b5" "#44493a" "#c93ca5" "#eac429" "#b8dcc4" "#799498" "#6ee4f5" "#dc341f" "#d565b0" "#2fcda3" "#4f08c2" "#90db5c" "#373d28" "#f5d83b" "#2bce72" "#c3f0ed" "#5d7ad3" "#4bfaa1"
+ 
+```
+
+
+## SAVING FILE
+```{r}
+#Untuk melihat lokasi basal data kita
+getwd()
+
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/JUMLAH TEMUAN SATWA CT_Suaq_Januari - Februari 2026.png",
+  Graph1,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+
+
+```
+
+## TABLE FILE
+```{r}
+#write.csv(Species, "C:/Users/Junaydy/Desktop/R LESSON/Data Suaq/Output/Jumlah foto spesies Suaq Nov-Des 2024.csv")
+
+
+```
+
+## DATA CAMERA TRAP SESUAI DENGAN WAKTU PENGAMBILAN DATA
+```{r}
+df_filtered
+```
+
+```{r}
+class(df_filtered$Date.Time)
+
+unique(df_filtered$Date.Time)
+```
+
+```{r}
+#df_filtered$Date.Time <- strptime(df_filtered$Date.Time, format = "%d:%m:%Y %H:%M")
+#df_filtered$Date.Time <- strptime(df_filtered$Date.Time, format = "%Y:%m:%d %H:%M:%S")
+df_filtered$Date.Time <- strptime(df_filtered$Date.Time, format = "%d/%m/%Y %H:%M")
+
+
+#CHECK AGAN WITH
+class(df_filtered$Date.Time)
+```
+
+```{r}
+summary(df_filtered$Date.Time)
+```
+
+```{r}
+head(months(df_filtered$Date.Time))
+```
+
+
+```{r}
+colnames(df_filtered)
+```
+
+
+## PEMILIHAN BULAN DENGAN NAMA OBJEK BARU
+```{r}
+# Check if month is January or March
+is_month <- months(df_filtered$Date.Time) %in% c("November","December", "January","February", "March", "April")
+
+# Filter the dataframe for January or March
+filtered_df <- filter(df_filtered, is_month)
+
+
+```
+
+## GGPLOT 2
+```{r}
+#create the graph
+#ggplot(data = filtered_df, aes(x = fct_rev(fct_infreq(Species))))+
+  #geom_bar(fill="lightblue")+
+  #coord_flip()+
+  #xlab("Species")+
+  #ylab("Number of Pictures")+
+  #labs(fill="Number of Individuals in a Picture:", title = "Jumlah Foto per Species", subtitle = "Sikundur, Juli - September 2024")+
+  #scale_y_continuous(expand = expansion(mult = c(0.01, 0.1)))+
+  #geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex=2.5,
+          #position = position_dodge(width = 0.9), hjust = -0.25)+
+  #theme(axis.text.y = element_text(size = 7), legend.position="bottom")+
+  #guides(fill = guide_legend(nrow = 1, title.position = "top"))
+
+
+Graph1<-ggplot(data = filtered_df, aes(x = fct_rev(fct_infreq(Species.Common.Name))))+
+  geom_bar(fill = "#09712a") +  # Specify a color here
+  coord_flip() +
+  xlab("Nama Spesies") +
+  ylab("Jumlah Tangkapan (foto)") +
+  labs(fill = "Jumlah Temuan Satwa Kamera Jebak",
+       title = "Jumlah Temuan Satwa Kamera Jebak",
+       subtitle = "Stasiun Penelitian Suaq Balimbing, November 2025 - April 2026") +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.1))) +
+  geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex = 2.5,
+            position = position_dodge(width = 1.0), hjust = -0.25) +
+  theme(axis.text.y = element_text(size = 7), legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1, title.position = "top"))
+
+
+
+```
+
+
+
+#simpan file csv
+```{r}
+write.csv(df_filtered, "E:/CAMERA TRAP/02_METADATA/FILTER FINAL SUAQ_NOVEMBER 2025 - APRIL 2026_VERS2.csv")
+
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+library(dplyr)
+
+# --- Filter hanya data dengan Independent.event == 1
+independent_df <- filtered_df %>%
+  filter(Independent.Event == 1)
+
+# --- Hitung jumlah foto per spesies dan urutkan dari terbesar ke terkecil
+summary_df <- independent_df %>%
+  count(Species.Common.Name) %>%
+  arrange(desc(n))
+
+# --- Plot
+ggplot(summary_df, aes(x = fct_rev(fct_inorder(Species.Common.Name)), y = n)) +
+  geom_bar(stat = "identity", fill = "#90ac42") +
+  coord_flip() +
+  xlab("Wildlife Species") +
+  ylab("Number of Independent Events") +
+  labs(
+    title = "Number of Independent Events per Species",
+    subtitle = "Suaq Balimbing Research Station, May to October 2025"
+  ) +
+  geom_text(aes(label = n), hjust = -0.25, size = 2.5) +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.1))) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 7),
+    legend.position = "none"
+  )
+
+
+
+```
+
+
+
+
+## GGPLOT 3 : JLH INDIVIDU, SEX, CAMERA, MONTHS
+```{r}
+#Pengelompokan berdasarkan jumlah individu per foto
+ggplot(filtered_df, aes(x=fct_rev(fct_infreq(Species.Common.Name))))+
+  geom_bar(aes(fill=factor(Sighting.Quantity)))+ #fill=factor(months(Date_Time.Captured)))
+  coord_flip()+
+  xlab("Jenis Satwa")+
+  ylab("Jumlah individu per Foto")+
+  labs(title = "Jumlah individu spesies per foto", subtitle = "Stasiun Penelitian Suaq Balimbing, Juli - Agustus 2025", fill="Keterangan:")+
+ scale_y_continuous(expand = expansion(mult = c(0.01, 0.1)))+
+  geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex=2.5,
+          position = position_dodge(width = 0.9), hjust = -0.25)+
+  theme(axis.text.y = element_text(size = 7), legend.position="bottom")+
+  guides(fill = guide_legend(nrow = 1, title.position = "top"))
+```
+
+
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/nov-apr 2026/Suaq Balimbing November 2025-April 2026.png",
+  Graph1,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+```
+
+
+```{r}
+#Pengelompokan berdasarkan jenis kelamin
+#ggplot(filtered_df, aes(x=fct_rev(fct_infreq(Species))))+
+  #geom_bar(aes(fill=factor(Sex)))+
+  #coord_flip()+
+  #xlab("Jenis Satwa")+
+  #ylab("Number of Pictures")+
+  #labs(title = "Number of Cameratrap-Photos per Species", subtitle = "In Suaq, August 2019", fill="Sex of Individuals in Photo:")+
+  #scale_y_continuous(expand = expansion(mult = c(0.01, 0.1)))+
+  #geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex=2.5,
+          #position = position_dodge(width = 0.9), hjust = -0.25)+
+  #theme(axis.text.y = element_text(size = 7), legend.position="bottom")+
+  #guides(fill = guide_legend(title.position = "top"))+
+  #scale_fill_brewer(palette="Set3")
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+library(viridis)
+
+ggplot(filtered_df, aes(x = fct_rev(fct_infreq(Species.Common.Name)))) +
+  geom_bar(
+    aes(fill = factor(Trap.Station.Name)),
+    width = 0.7   # lebih ramping, memberi ruang antar bar
+  ) +
+  coord_flip() +
+  xlab("Nama Spesies") +
+  ylab("Jumlah Tangkapan (foto)") +
+  labs(
+    title = "Temuan Satwa Kamera Jebak",
+    subtitle = "Stasiun Penelitian Suaq Balimbing - Januari hingga Februari 2026",
+    fill = "Camera Trap:"
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.2))) +
+  geom_text(
+    stat = "count",
+    aes(label = ..count.., y = ..count..),
+    size = 2.3,                 # gunakan 'size' bukan 'cex' di ggplot
+    position = position_dodge(width = 0.7),
+    hjust = -0.2
+  ) +
+  theme_minimal(base_size = 9) +
+  theme(
+    axis.text.y = element_text(size = 7),
+    plot.title = element_text(face = "bold", size = 11),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7)
+  ) +
+  guides(fill = guide_legend(title.position = "top", nrow = 2)) +
+  scale_fill_viridis_d(option = "turbo")
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+library(viridis)
+
+ggplot(df_filtered, aes(x = fct_rev(fct_infreq(Species.Common.Name)))) +
+  geom_bar(
+    aes(fill = factor(Trap.Station.Name)),
+    width = 0.7   # memberi sedikit ruang antar batang
+  ) +
+  coord_flip() +
+  xlab("Nama Spesies") +
+  ylab("Jumlah Tangkapan (Foto)") +
+  labs(
+    title = "Deteksi Satwa dalam Kamera Jebak",
+    subtitle = "Stasiun Penelitian Sikundur, Januari - Februari 2026",
+    fill = "Camera Trap:"
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.2))) +
+  geom_text(
+    stat = "count",
+    aes(label = ..count.., y = ..count..),
+    size = 2.5,                        # gunakan 'size' bukan 'cex'
+    position = position_dodge(width = 0.7),
+    hjust = -0.2
+  ) +
+  theme_minimal(base_size = 9) +
+  theme(
+    axis.text.y = element_text(size = 7),
+    plot.title = element_text(face = "bold", size = 11),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    panel.grid.major.y = element_blank(),  # hilangkan garis horizontal supaya bersih
+    panel.grid.minor = element_blank()
+  ) +
+  guides(fill = guide_legend(title.position = "top", nrow = 2)) +
+  scale_fill_viridis_d(option = "turbo")
+
+
+```
+
+
+
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/Suaq_Wildlife Detections from Camera Traps_Jan-Feb 2026.png",
+  Graph3,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+```
+
+
+PER BULAN
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Assuming your data frame is named df_filtered
+# Convert Date.Time column to datetime format
+filtered_df$Date.Time <- as.POSIXct(filtered_df$Date.Time, format = "%d/%m/%Y %H:%M")
+
+# Extract month from Date.Time
+filtered_df$Month <- month(filtered_df$Date.Time, label = TRUE)
+
+# Filter data for the specified months
+months_of_interest <- c("Nov","Dec","Jan","Feb","Mar","Apr")
+df_filtered_filtered <- filtered_df %>% filter(Month %in% months_of_interest)
+
+# Group by Species and Month, then summarize the total number of individuals
+individuals_per_species_per_month <- df_filtered_filtered %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarize(Total_Individuals = sum(Sighting.Quantity))
+
+# Plotting using ggplot
+ggplot(data = individuals_per_species_per_month, aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  geom_bar(stat = "identity") +
+  xlab("Periode Pemasangan Kamera Jebak") +
+  ylab("Jumlah Individu") +
+  labs(fill = "Jenis Satwa",
+       title = "Jumlah Foto yang Tertangkap Kamera Jebak",
+       subtitle = "Stasiun Penelitian Suaq Balimbing, Oktober - Desember 2025") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+```
+#per bulan sesungguhnya
+```{r}
+ggplot(individuals_per_species_per_month,
+       aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.7) +
+  scale_fill_viridis_d(option = "turbo") +
+  xlab("Waktu Pemasangan") +
+  ylab("Jumlah tangkapan (foto)") +
+  labs(
+    title = "Jumlah Tangkapan Foto Satwa melalui Kamera jebak",
+    subtitle = "Stasiun Penelitian Suaq Balimbing, Januari - februari 2026",
+    fill = "Wildlife Species"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", size = 12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(0.4, "cm"),     # mengecilkan kotak warna
+    legend.box = "vertical",               # legenda disusun vertikal
+    panel.grid.minor = element_blank()
+  ) +
+  guides(
+    fill = guide_legend(
+      title.position = "top",
+      ncol = ,          # 🔹 ubah jadi lebih banyak kolom
+      byrow = TRUE       # urutkan per baris agar lebih rapat dan semua muncul
+    )
+  )
+```
+#november tahun lalu dulu
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Convert Date.Time
+filtered_df$Date.Time <- as.POSIXct(filtered_df$Date.Time, format = "%d/%m/%Y %H:%M")
+
+# Extract month
+filtered_df$Month <- month(filtered_df$Date.Time, label = TRUE)
+
+# Define custom order
+months_of_interest <- c("Nov","Dec","Jan","Feb","Mar","Apr")
+
+# Filter data
+df_filtered_filtered <- filtered_df %>%
+  filter(Month %in% months_of_interest)
+
+# 🔥 IMPORTANT: set factor order
+df_filtered_filtered$Month <- factor(df_filtered_filtered$Month,
+                                     levels = months_of_interest)
+
+# Summarize
+individuals_per_species_per_month <- df_filtered_filtered %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarize(Total_Individuals = sum(Sighting.Quantity), .groups = "drop")
+
+# Plot
+ggplot(data = individuals_per_species_per_month,
+       aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  geom_bar(stat = "identity") +
+  xlab("Periode Pemasangan Kamera Jebak") +
+  ylab("Jumlah Individu") +
+  labs(fill = "Jenis Satwa",
+       title = "Jumlah Foto yang Tertangkap Kamera Jebak",
+       subtitle = "Stasiun Penelitian Suaq Balimbing, Nov 2025 - Apr 2026") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+```
+#grafik
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(viridis)
+
+# Convert Date.Time
+filtered_df$Date.Time <- as.POSIXct(filtered_df$Date.Time, format = "%d/%m/%Y %H:%M")
+
+# Extract Month
+filtered_df$Month <- month(filtered_df$Date.Time, label = TRUE)
+
+# Custom order (lintas tahun)
+months_of_interest <- c("Nov","Dec","Jan","Feb","Mar","Apr")
+
+df_filtered_filtered <- filtered_df %>%
+  filter(Month %in% months_of_interest)
+
+# 🔥 Set factor order
+df_filtered_filtered$Month <- factor(df_filtered_filtered$Month,
+                                     levels = months_of_interest)
+
+# Summarize
+individuals_per_species_per_month <- df_filtered_filtered %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarize(Total_Individuals = sum(Sighting.Quantity), .groups = "drop")
+
+# Plot
+Graph4<-ggplot(individuals_per_species_per_month,
+       aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.7) +
+  
+  # 🔥 nicer color
+  scale_fill_viridis_d(option = "turbo") +
+  
+  xlab("Waktu Pemasangan") +
+  ylab("Jumlah tangkapan (foto)") +
+  labs(
+    title = "Jumlah Tangkapan Foto Satwa melalui Kamera Jebak",
+    subtitle = "Stasiun Penelitian Suaq Balimbing, Nov 2025 – Apr 2026",
+    fill = "Wildlife Species"
+  ) +
+  
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", size = 12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(0.4, "cm"),
+    legend.box = "vertical",
+    panel.grid.minor = element_blank()
+  ) +
+  
+  # 🔥 FIX bagian kosong kamu
+  guides(
+    fill = guide_legend(
+      title.position = "top",
+      ncol = 3,        # ← kamu bisa ubah (2, 3, 4 tergantung jumlah spesies)
+      byrow = TRUE
+    )
+  )
+```
+
+
+
+#MENYIMPAN FOTO
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/Sikundur_November 2025-Aril2026.png",
+  Graph4,
+  width=14, 
+  height = 8, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+
+```
+
+```{r}
+# Urutkan species berdasarkan total individu terbesar ke terkecil
+species_order <- individuals_per_species_per_month %>%
+  group_by(Species.Common.Name) %>%
+  summarise(Total = sum(Total_Individuals, na.rm = TRUE)) %>%
+  arrange(desc(Total)) %>%
+  pull(Species.Common.Name)
+
+# Terapkan urutan ini ke faktor di data utama
+individuals_per_species_per_month$Species.Common.Name <- factor(
+  individuals_per_species_per_month$Species.Common.Name,
+  levels = species_order
+)
+
+```
+
+```{r}
+ggplot(individuals_per_species_per_month,
+       aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.7) +
+  scale_fill_viridis_d(option = "turbo") +
+  xlab("Camera Trap Deployment Period") +
+  ylab("Number of Individuals") +
+  labs(
+    title = "Camera Trap Detections by Month",
+    subtitle = "Sikundur Research Station, Nov 2024 – Oct 2025",
+    fill = "Wildlife Species"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", size = 12),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(0.4, "cm"),
+    legend.box = "vertical",
+    panel.grid.minor = element_blank()
+  ) +
+  guides(
+    fill = guide_legend(
+      title.position = "top",
+      ncol = 5,
+      byrow = TRUE
+    )
+  )
+
+```
+
