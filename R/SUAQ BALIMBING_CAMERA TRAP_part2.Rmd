@@ -1,0 +1,321 @@
+---
+title: "SUAQ_CAMERA TRAP"
+author: "JUNAYDY MICHAEL ANGELO GINTING"
+date: "2026-05-05"
+output: html_document
+---
+# ================================
+# 1. SETUP
+# ================================
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(lubridate)
+library(viridis)
+
+Sys.setlocale("LC_TIME", "English")
+```
+# ================================
+# 2. LOAD DATA
+# ================================
+```{r}
+basepath <- list.files("E:/CAMERA TRAP/02_METADATA/LEBIH TERBARU", full.names = TRUE)
+
+basepath
+```
+```{r}
+df <- read.csv(basepath[4], sep = ";")
+```
+# ================================
+# 3. BASIC CHECK
+# ================================
+```{r}
+glimpse(df)
+dim(df)
+```
+# Species
+```{r}
+Species_table <- table(df$Species)
+Species_table
+```
+# ================================
+# 4. CLEAN DATA
+# ================================
+```{r}
+df_clean <- df %>%
+  filter(
+    !Species.Common.Name %in% c("", "human", "empty", "Blank"),
+    !is.na(Species.Common.Name)
+  )
+```
+# ================================
+# 5. SUMMARY SPECIES
+# ================================
+```{r}
+species_summary <- df_clean %>%
+  count(Species.Common.Name, name = "Picture_Count") %>%
+  arrange(desc(Picture_Count))
+```
+#cek
+```{r}
+species_summary
+```
+# ================================
+# 7. DATE PROCESSING
+# ================================
+```{r}
+df_clean <- df_clean %>%
+  mutate(
+    Date.Time = as.POSIXct(Date.Time, format = "%d/%m/%Y %H:%M"),
+    Month = month(Date.Time, label = TRUE)
+  )
+```
+
+# ================================
+# 8. FILTER BULAN (LINTAS TAHUN)
+# ================================
+```{r}
+months_order <- c("Nov","Dec","Jan","Feb","Mar","Apr")
+
+df_month <- df_clean %>%
+  filter(Month %in% months_order) %>%
+  mutate(Month = factor(Month, levels = months_order))
+```
+# ================================
+# 9. SUMMARY PER BULAN
+# ================================
+```{r}
+monthly_summary <- df_month %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarise(
+    Total_Individuals = sum(Sighting.Quantity, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+#simpan data dalam bentuk csv
+```{r}
+write.csv(monthly_summary, "E:/CAMERA TRAP/02_METADATA/MONTHLY SUMMARY_SUAQ_NOVEMBER 2025 - APRIL 2026.csv")
+```
+
+# ================================
+# 10. PLOT 1: JUMLAH FOTO PER SPESIES
+# ================================
+```{r}
+Tabel1<-ggplot(data = df_month, aes(x = fct_rev(fct_infreq(Species.Common.Name))))+
+  geom_bar(fill = "#09712a") +  # Specify a color here
+  coord_flip() +
+  xlab("Nama Spesies") +
+  ylab("Jumlah Temuan (foto)") +
+  labs(fill = "Jumlah Temuan Satwa Kamera Jebak",
+       title = "Jumlah Temuan Satwa Kamera Jebak",
+       subtitle = "Stasiun Penelitian Suaq Balimbing, November 2025 - April 2026") +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.1))) +
+  geom_text(stat = "count", aes(label = ..count.., y = ..count..), cex = 2.5,
+            position = position_dodge(width = 1.0), hjust = -0.25) +
+  theme(axis.text.y = element_text(size = 7), legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1, title.position = "top"))
+```
+#simpan foto Tabel 1
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/nov-apr 2026/SUAQ November 2025-April 2026.png",
+  Tabel1,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+```
+
+# ================================
+# 11. PLOT 2: SPESIES per CT
+# ================================
+```{r}
+Tabel2<-ggplot(df_month, aes(x = fct_rev(fct_infreq(Species.Common.Name)))) +
+  geom_bar(
+    aes(fill = factor(Trap.Station.Name)),
+    width = 0.7   # memberi sedikit ruang antar batang
+  ) +
+  coord_flip() +
+  xlab("Nama Spesies") +
+  ylab("Jumlah Temuan (Foto)") +
+  labs(
+    title = "Deteksi Satwa dalam Kamera Jebak",
+    subtitle = "Stasiun Penelitian Suaq Balimbing, November 2025 - April 2026",
+    fill = "Camera Trap:"
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.2))) +
+  geom_text(
+    stat = "count",
+    aes(label = ..count.., y = ..count..),
+    size = 2.5,                        # gunakan 'size' bukan 'cex'
+    position = position_dodge(width = 0.7),
+    hjust = -0.2
+  ) +
+  theme_minimal(base_size = 9) +
+  theme(
+    axis.text.y = element_text(size = 7),
+    plot.title = element_text(face = "bold", size = 11),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    panel.grid.major.y = element_blank(),  # hilangkan garis horizontal supaya bersih
+    panel.grid.minor = element_blank()
+  ) +
+  guides(fill = guide_legend(title.position = "top", nrow = 2)) +
+  scale_fill_viridis_d(option = "turbo")
+```
+#simpan foto Tabel 2
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/nov-apr 2026/SUAQ_CT_November 2025-April 2026.png",
+  Tabel2,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+```
+
+# ================================
+# 10. PLOT 3: SPESIES per BULAN
+# ================================
+#FILTER DATA DULU, IN CASE SESUATU TERJADI
+```{r}
+# Convert Date.Time
+df_month$Date.Time <- as.POSIXct(df_month$Date.Time, format = "%d/%m/%Y %H:%M")
+
+# Extract Month
+df_month$Month <- month(df_month$Date.Time, label = TRUE)
+
+# Custom order (lintas tahun)
+months_of_interest <- c("Nov","Dec","Jan","Feb","Mar","Apr")
+
+df_filtered_filtered <- df_month %>%
+  filter(Month %in% months_of_interest)
+
+# 🔥 Set factor order
+df_filtered_filtered$Month <- factor(df_filtered_filtered$Month,
+                                     levels = months_of_interest)
+
+# Summarize
+individuals_per_species_per_month <- df_filtered_filtered %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarize(Total_Individuals = sum(Sighting.Quantity), .groups = "drop")
+
+#plot lah ya
+Tabel3<-ggplot(individuals_per_species_per_month,
+       aes(x = Month, y = Total_Individuals, fill = Species.Common.Name)) +
+  
+  geom_bar(stat = "identity", position = "fill", width = 0.8) +
+  
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(option = "turbo") +
+  
+  labs(
+    title = "Proporsi Temuan Satwa per Bulan di Stasiun Penelitian Suaq Balimbing, November 2025 - April 2026",
+    x = "Waktu Pemasangan",
+    y = "Proporsi (%)",
+    fill = "Spesies"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  
+  theme(
+    # 🔥 TITLE CONTROL
+    plot.title = element_text(
+      size = 8,            # 🔥 ubah sesuai kebutuhan (10–16)
+      face = "bold",
+      hjust = 0.5,          # center
+      lineheight = 1.1
+    ),
+    
+    # 🔥 AXIS TITLE
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    
+    # 🔥 AXIS TEXT
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    
+    # 🔥 LEGEND (punya kamu)
+    legend.position = "right",
+    legend.direction = "vertical",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(0.4, "cm"),
+    legend.spacing.y = unit(0.15, "cm"),
+    legend.box.margin = margin(0, 0, 0, 5),
+    
+    # 🔥 SPACING
+    plot.margin = margin(10, 15, 10, 10),
+    
+    panel.grid.minor = element_blank()
+  )
+```
+#simpan foto Tabel 3
+```{r}
+ggsave("E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/nov-apr 2026/SUAQ_MONTH_November 2025-April 2026.png",
+  Tabel3,
+  width=10, 
+  height = 6, 
+  units = "cm", 
+  dpi = 300, 
+  scaling = 0.5,
+  )
+```
+
+# ================================
+# 11. MONTHLY SUMMMARY
+# ================================
+```{r}
+
+library(dplyr)
+library(tidyr)
+
+# 1. SET URUTAN BULAN
+df_month <- df_month %>%
+  mutate(
+    Month = factor(Month, levels = c("Nov","Dec","Jan","Feb","Mar","Apr"))
+  )
+
+# 2. SUMMARY BERDASARKAN JUMLAH FOTO (BUKAN INDIVIDU)
+monthly_summary <- df_month %>%
+  group_by(Species.Common.Name, Month) %>%
+  summarise(
+    Total_Records = n(),   # 🔥 KEY (clean output)
+    .groups = "drop"
+  )
+
+# 3. UBAH KE WIDE FORMAT
+species_month_table <- monthly_summary %>%
+  pivot_wider(
+    names_from = Month,
+    values_from = Total_Records,
+    values_fill = 0
+  )
+
+# 4. URUTKAN BERDASARKAN TOTAL RECORD
+species_month_table <- species_month_table %>%
+  mutate(Total = rowSums(across(where(is.numeric)))) %>%
+  arrange(desc(Total))
+
+# 5. HAPUS KOLOM TOTAL (OPTIONAL)
+species_month_table <- species_month_table %>%
+  select(-Total)
+
+# 6. RENAME (BIAR CLEAN)
+species_month_table <- species_month_table %>%
+  rename(Species = Species.Common.Name)
+
+# 7. OUTPUT
+species_month_table
+```
+
+#simpan data dalam bentuk csv
+```{r}
+write.csv(species_month_table, "E:/CAMERA TRAP/03_ANALISIS/GRAFIK/2026/nov-apr 2026/MONTHLY SUMMARY_SUAQ_NOVEMBER 2025 - APRIL 2026.csv")
+```
+
+
