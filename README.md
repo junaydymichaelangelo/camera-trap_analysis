@@ -58,9 +58,3 @@ Examples include:
 Monitoring and Biodiversity Coordinator
 
 Yayasan Ekosistem Lestari (YEL)
-
----
-
-## License
-
-MIT License
